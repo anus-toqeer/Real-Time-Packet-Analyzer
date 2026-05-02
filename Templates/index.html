@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Network Traffic Monitor</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    {% if monitoring_status == 'running' %}
+    <meta http-equiv="refresh" content="5">
+    {% endif %}
+    <style>
+        :root {
+            /* Forest Dark Green Palette */
+            --bg-base:       #0d1f1a;
+            --bg-sidebar:    #0a1815;
+            --bg-panel:      #0f2620;
+            --bg-input:      #081410;
+            --bg-row-hover:  #1a3a2e;
+            --border:        #1f4a3a;
+            --border-light:  #2a5a48;
+
+            --text-primary:  #d0e8e3;
+            --text-muted:    #a0d4c8;
+            --text-dim:      #70a8a0;
+
+            /* Forest green accent */
+            --accent:        #2d9d7f;
+            --accent-dim:    rgba(45, 157, 127, 0.08);
+
+            /* Colors for protocols */
+            --green:         #3dd68f;
+            --red:           #e84c4c;
+            --yellow:        #f0ad4e;
+            --black :        #010101;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-base);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ══════════════════════════════
+           TOP BAR
+        ══════════════════════════════ */
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 60px;
+            padding: 0 24px;
+            background: var(--bg-sidebar);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--accent), #1a7a5e);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: white;
+            box-shadow: 0 4px 12px rgba(45, 157, 127, 0.2);
+        }
+
+        .logo-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            color: var(--text-primary);
+        }
+
+        .top-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .top-status .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-muted);
+        }
+        .top-status .dot.running {
+            background: var(--green);
+            box-shadow: 0 0 8px var(--green);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .top-stats { display: flex; gap: 24px; }
+        .top-stat { text-align: right; }
+        .top-stat-label {
+            font-size: 10px;
+            letter-spacing: 0.3px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+        .top-stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--accent);
+            margin-top: 4px;
+        }
+
+        /* ══════════════════════════════
+           BODY LAYOUT
+        ══════════════════════════════ */
+        .app-body {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* ══════════════════════════════
+           LEFT SIDEBAR
+        ══════════════════════════════ */
+        .sidebar {
+            width: 240px;
+            min-width: 240px;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding-bottom: 20px;
+        }
+
+        .sidebar-section {
+            padding: 18px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .section-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 10px;
+            letter-spacing: 0.5px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-bottom: 14px;
+            font-weight: 600;
+        }
+        .section-label::before {
+            content: '';
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+            flex-shrink: 0;
+        }
+
+        /* Sidebar buttons */
+        .sb-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 11px 14px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: transparent;
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s ease;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+        }
+        .sb-btn:last-child { margin-bottom: 0; }
+
+        /* Button variants */
+        .sb-btn-start {
+            border-color: rgba(61, 214, 143, 0.3);
+            color: var(--green);
+            background: rgba(61, 214, 143, 0.08);
+        }
+        .sb-btn-start:hover {
+            background: rgba(61, 214, 143, 0.16);
+            border-color: rgba(61, 214, 143, 0.5);
+        }
+
+        .sb-btn-stop {
+            border-color: rgba(232, 76, 76, 0.3);
+            color: var(--red);
+            background: rgba(232, 76, 76, 0.08);
+        }
+        .sb-btn-stop:hover {
+            background: rgba(232, 76, 76, 0.16);
+            border-color: rgba(232, 76, 76, 0.5);
+        }
+
+        .sb-btn-session {
+            border-color: var(--border-light);
+            color: var(--text-muted);
+            background: transparent;
+        }
+        .sb-btn-session:hover {
+            color: var(--accent);
+            border-color: var(--accent);
+            background: var(--accent-dim);
+        }
+
+        .sb-btn-filter {
+            border-color: var(--border-light);
+            color: var(--accent);
+            background: var(--accent-dim);
+        }
+        .sb-btn-filter:hover {
+            background: rgba(45, 157, 127, 0.16);
+            border-color: var(--accent);
+        }
+
+        .sb-btn-reset {
+            border-color: var(--border-light);
+            color: var(--text-muted);
+            text-decoration: none;
+            display: flex;
+            background: transparent;
+        }
+        .sb-btn-reset:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-dim);
+        }
+
+        .session-tag {
+            font-size: 11px;
+            letter-spacing: 0.3px;
+            color: var(--accent);
+            border: 1px solid var(--border-light);
+            padding: 8px 12px;
+            border-radius: 6px;
+            text-align: center;
+            margin-bottom: 8px;
+            background: var(--accent-dim);
+            font-weight: 500;
+        }
+
+        /* Filter inputs */
+        .filter-label {
+            font-size: 10px;
+            letter-spacing: 0.3px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            margin-top: 12px;
+            display: block;
+            font-weight: 600;
+        }
+        .filter-label:first-of-type { margin-top: 0; }
+
+        .sb-input {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 9px 12px;
+            border-radius: 6px;
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            outline: none;
+            transition: border-color 0.2s;
+            margin-bottom: 8px;
+        }
+        .sb-input:focus {
+            border-color: var(--accent);
+            background: var(--bg-panel);
+        }
+        .sb-input option { background: var(--bg-panel); color: var(--text-primary); }
+
+        /* ══════════════════════════════
+           MAIN CONTENT
+        ══════════════════════════════ */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-width: 0;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--black);
+        }
+
+        .panel-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        .panel-title::before {
+            content: '';
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+            flex-shrink: 0;
+        }
+
+        .packet-count {
+            font-size: 11px;
+            color: var(--text-dim);
+            letter-spacing: 0.3px;
+            font-weight: 500;
+        }
+        .packet-count span { color: var(--accent); font-weight: 600; }
+
+        /* Table */
+        .table-wrap {
+            overflow-x: auto;
+            overflow-y: auto;
+            flex: 1;
+            min-height: 100px;
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+
+        th {
+            font-size: 10px;
+            letter-spacing: 0.3px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            padding: 10px 14px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-sidebar);
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border);
+            font-size: 12px;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        tbody tr:hover { background: var(--bg-row-hover); }
+        tbody tr:hover td { color: var(--text-primary); }
+
+        .ip { color: var(--accent); font-weight: 500; }
+        .row-num { color: var(--text-dim); font-size: 11px; }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+        .badge-tcp {
+            background: rgba(61, 214, 143, 0.12);
+            color: var(--green);
+            border: 1px solid rgba(61, 214, 143, 0.2);
+        }
+        .badge-udp {
+            background: rgba(45, 157, 127, 0.12);
+            color: var(--accent);
+            border: 1px solid rgba(45, 157, 127, 0.2);
+        }
+        .badge-icmp {
+            background: rgba(232, 76, 76, 0.12);
+            color: var(--red);
+            border: 1px solid rgba(232, 76, 76, 0.2);
+        }
+
+        .service-tag {
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+        }
+
+        .log-panel {
+            background: var(--bg-sidebar);
+            border-top: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            min-height: 180px;
+            max-height: 220px;
+        }
+
+        .log-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 18px 10px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border-light) transparent;
+        }
+
+        .log-line {
+            font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-dim);
+            padding: 4px 0;
+            border-bottom: 1px solid var(--border);
+            line-height: 1.6;
+        }
+        .log-line:hover { color: var(--text-primary); }
+        .log-time { color: var(--accent); font-weight: 500; }
+        .log-src { color: var(--text-muted); }
+        .log-dst { color: var(--text-muted); }
+        .log-proto { color: var(--green); font-weight: 600; }
+        .log-svc { color: var(--text-dim); }
+
+        footer {
+            text-align: center;
+            padding: 10px;
+            font-size: 10px;
+            color: var(--text-dim);
+            letter-spacing: 0.3px;
+            border-top: 1px solid var(--border);
+            background: var(--black);
+            flex-shrink: 0;
+            font-weight: 500;
+        }
+
+        /* Stats Bar with Stat Boxes */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            background: var(--bg-sidebar);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 20px;
+            flex-shrink: 0;
+        }
+
+        .stat-box {
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+            border-radius: 8px;
+            background: var(--black);
+            border-left: 4px solid var(--border-light);
+            transition: all 0.2s ease;
+        }
+
+        .stat-box:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(45, 157, 127, 0.1);
+        }
+
+        .stat-box.total { border-left-color: var(--accent); }
+        .stat-box.tcp { border-left-color: var(--green); }
+        .stat-box.udp { border-left-color: var(--accent); }
+        .stat-box.icmp { border-left-color: var(--green); }
+        .stat-box.avg { border-left-color: var(--accent); }
+
+        .stat-label {
+            font-size: 9px;
+            letter-spacing: 0.5px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--accent);
+            line-height: 1;
+        }
+
+        .stat-box.tcp .stat-value { color: var(--green); }
+        .stat-box.udp .stat-value { color: var(--accent); }
+        .stat-box.icmp .stat-value { color: var(--green); }
+        .stat-box.avg .stat-value { color: var(--accent); }
+
+        .stat-subtitle {
+            font-size: 8px;
+            letter-spacing: 0.3px;
+            color: var(--text-dim);
+            margin-top: 6px;
+            text-transform: uppercase;
+        }
+
+        @media (max-width: 800px) {
+            .app-body { flex-direction: column; }
+            .sidebar { width: 100%; min-width: 0; }
+            .top-stats { display: none; }
+            .stats-bar { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+
+</head>
+<body>
+
+
+    <!-- TOP BAR -->
+    <div class="top-bar">
+        <div class="logo-area">
+            <span class="logo-text">Real Time Packet Analyzer</span>
+            <div class="top-status">
+                <div class="dot {% if monitoring_status == 'running' %}running{% endif %}"></div>
+                {% if monitoring_status == 'running' %}ACTIVE{% else %}IDLE{% endif %}
+            </div>
+        </div>
+        <div class="top-stats">
+            <div class="top-stat">
+                <div class="top-stat-label">Captured</div>
+                <div class="top-stat-value">{{ stats.total }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-body">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+
+            <div class="sidebar-section">
+                <div class="section-label">Controls</div>
+                <form method="POST">
+                    <input type="hidden" name="action" value="start">
+                    <button type="submit" class="sb-btn sb-btn-start">▶ &nbsp;START</button>
+                </form>
+                <form method="POST">
+                    <input type="hidden" name="action" value="stop">
+                    <button type="submit" class="sb-btn sb-btn-stop">■ &nbsp;STOP</button>
+                </form>
+                {% if monitoring_status == 'stopped' and view_mode != 'session' %}
+                <form method="POST">
+                    <input type="hidden" name="action" value="view_session">
+                    <button type="submit" class="sb-btn sb-btn-session">↓ &nbsp;SESSION LOG</button>
+                </form>
+                {% endif %}
+                {% if view_mode == 'session' %}
+                <div class="session-tag">📋 SESSION VIEW</div>
+                <a href="/" style="text-decoration:none;">
+                    <button type="button" class="sb-btn sb-btn-reset">✕ &nbsp;EXIT SESSION</button>
+                </a>
+                {% endif %}
+            </div>
+
+            <div class="sidebar-section">
+                <div class="section-label">Filters</div>
+                <form method="POST">
+                    <input type="hidden" name="action" value="filter">
+                    <input type="hidden" name="view_mode" value="{{ view_mode }}">
+                    <label class="filter-label">Protocol</label>
+                    <select name="protocol" class="sb-input">
+                        <option value="">ALL</option>
+                        <option value="TCP"  {% if selected_protocol == 'TCP'  %}selected{% endif %}>TCP</option>
+                        <option value="UDP"  {% if selected_protocol == 'UDP'  %}selected{% endif %}>UDP</option>
+                        <option value="ICMP" {% if selected_protocol == 'ICMP' %}selected{% endif %}>ICMP</option>
+                    </select>
+                    <label class="filter-label">Source IP</label>
+                    <input type="text" name="source_ip" class="sb-input"
+                           placeholder="e.g. 192.168.1.5" value="{{ selected_source_ip }}">
+                    <label class="filter-label">Destination IP</label>
+                    <input type="text" name="destination_ip" class="sb-input"
+                           placeholder="e.g. 8.8.8.8" value="{{ selected_dest_ip }}">
+                    <br><br>
+                    <button type="submit" class="sb-btn sb-btn-filter">⌕ &nbsp;APPLY FILTER</button>
+                    <a href="/" style="text-decoration:none;">
+                        <button type="button" class="sb-btn sb-btn-reset">↺ &nbsp;RESET</button>
+                    </a>
+                </form>
+            </div>
+
+        </aside>
+
+        <!-- MAIN -->
+        <main class="main">
+
+            <!-- STATS BAR with Stat Boxes -->
+            <div class="stats-bar">
+                <div class="stat-box total">
+                    <div class="stat-label">Total Packets</div>
+                    <div class="stat-value">{{ stats.total }}</div>
+                    <div class="stat-subtitle">Packets Captured</div>
+                </div>
+                <div class="stat-box tcp">
+                    <div class="stat-label">TCP</div>
+                    <div class="stat-value">{{ stats.tcp_count }}</div>
+                    <div class="stat-subtitle">Transmission Control</div>
+                </div>
+                <div class="stat-box udp">
+                    <div class="stat-label">UDP</div>
+                    <div class="stat-value">{{ stats.udp_count }}</div>
+                    <div class="stat-subtitle">User Datagram</div>
+                </div>
+                <div class="stat-box icmp">
+                    <div class="stat-label">ICMP</div>
+                    <div class="stat-value">{{ stats.icmp_count }}</div>
+                    <div class="stat-subtitle">Control Messages</div>
+                </div>
+                <div class="stat-box avg">
+                    <div class="stat-label">Avg Packet Size</div>
+                    <div class="stat-value">{{ stats.avg_size }}</div>
+                    <div class="stat-subtitle">Bytes Average</div>
+                </div>
+            </div>
+
+            <div class="panel" style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
+                <div class="panel-header">
+                    <div class="panel-title">Packet Capture</div>
+                    <div class="packet-count"><span>{{ packets|length }}</span> packets</div>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Time</th>
+                                <th>Source IP</th>
+                                <th>Destination IP</th>
+                                <th>Protocol</th>
+                                <th>Src Port</th>
+                                <th>Dst Port</th>
+                                <th>Service</th>
+                                <th>Size</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for packet in packets %}
+                            <tr>
+                                <td class="row-num">{{ loop.index }}</td>
+                                <td>{{ packet.time }}</td>
+                                <td class="ip">{{ packet.source_ip }}</td>
+                                <td class="ip">{{ packet.destination_ip }}</td>
+                                <td>
+                                    {% if packet.protocol == 'TCP' %}
+                                        <span class="badge badge-tcp">TCP</span>
+                                    {% elif packet.protocol == 'UDP' %}
+                                        <span class="badge badge-udp">UDP</span>
+                                    {% else %}
+                                        <span class="badge badge-icmp">ICMP</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ packet.source_port }}</td>
+                                <td>{{ packet.destination_port }}</td>
+                                <td><span class="service-tag">{{ packet.service }}</span></td>
+                                <td>{{ packet.packet_size }} B</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="log-panel">
+                <div class="panel-header">
+                    <div class="panel-title">System Log</div>
+                </div>
+                <div class="log-body">
+                    {% for packet in packets %}
+                    <div class="log-line">
+                        <span class="log-time">[{{ packet.time }}]</span>
+                        <span class="log-src">&nbsp;{{ packet.source_ip }}</span>
+                        <span style="color:#1f4a3a;">&nbsp;→&nbsp;</span>
+                        <span class="log-dst">{{ packet.destination_ip }}</span>
+                        <span style="color:#1f4a3a;">&nbsp;|&nbsp;</span>
+                        <span class="log-proto">{{ packet.protocol }}</span>
+                        <span style="color:#1f4a3a;">&nbsp;|&nbsp;</span>
+                        <span class="log-svc">{{ packet.packet_size }}B</span>
+                        <span style="color:#1f4a3a;">&nbsp;|&nbsp;</span>
+                        <span class="log-svc">{{ packet.service }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <footer>NETWORK MONITOR  &nbsp;·&nbsp; COMPUTER NETWORKS PROJECT</footer>
+            <footer>Anus Toqeer BCSF24M012</footer>
+        </main>
+    </div>
+
+</body>
+</html>
