@@ -10,7 +10,6 @@
     {% endif %}
     <style>
         :root {
-            /* Forest Dark Green Palette */
             --bg-base:       #0d1f1a;
             --bg-sidebar:    #0a1815;
             --bg-panel:      #0f2620;
@@ -23,15 +22,13 @@
             --text-muted:    #a0d4c8;
             --text-dim:      #70a8a0;
 
-            /* Forest green accent */
             --accent:        #2d9d7f;
             --accent-dim:    rgba(45, 157, 127, 0.08);
 
-            /* Colors for protocols */
             --green:         #3dd68f;
             --red:           #e84c4c;
             --yellow:        #f0ad4e;
-            --black :        #010101;
+            --black:         #010101;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -46,7 +43,7 @@
         }
 
         /* ══════════════════════════════
-           TOP BAR
+           TOP BAR — was in CSS but missing from HTML
         ══════════════════════════════ */
         .top-bar {
             display: flex;
@@ -181,7 +178,6 @@
             flex-shrink: 0;
         }
 
-        /* Sidebar buttons */
         .sb-btn {
             display: flex;
             align-items: center;
@@ -203,7 +199,6 @@
         }
         .sb-btn:last-child { margin-bottom: 0; }
 
-        /* Button variants */
         .sb-btn-start {
             border-color: rgba(61, 214, 143, 0.3);
             color: var(--green);
@@ -271,7 +266,6 @@
             font-weight: 500;
         }
 
-        /* Filter inputs */
         .filter-label {
             font-size: 10px;
             letter-spacing: 0.3px;
@@ -355,7 +349,6 @@
         }
         .packet-count span { color: var(--accent); font-weight: 600; }
 
-        /* Table */
         .table-wrap {
             overflow-x: auto;
             overflow-y: auto;
@@ -472,7 +465,6 @@
             font-weight: 500;
         }
 
-        /* Stats Bar with Stat Boxes */
         .stats-bar {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -499,10 +491,10 @@
         }
 
         .stat-box.total { border-left-color: var(--accent); }
-        .stat-box.tcp { border-left-color: var(--green); }
-        .stat-box.udp { border-left-color: var(--accent); }
-        .stat-box.icmp { border-left-color: var(--green); }
-        .stat-box.avg { border-left-color: var(--accent); }
+        .stat-box.tcp   { border-left-color: var(--green); }
+        .stat-box.udp   { border-left-color: var(--accent); }
+        .stat-box.icmp  { border-left-color: var(--green); }
+        .stat-box.avg   { border-left-color: var(--accent); }
 
         .stat-label {
             font-size: 9px;
@@ -521,10 +513,8 @@
             line-height: 1;
         }
 
-        .stat-box.tcp .stat-value { color: var(--green); }
-        .stat-box.udp .stat-value { color: var(--accent); }
+        .stat-box.tcp  .stat-value { color: var(--green); }
         .stat-box.icmp .stat-value { color: var(--green); }
-        .stat-box.avg .stat-value { color: var(--accent); }
 
         .stat-subtitle {
             font-size: 8px;
@@ -534,6 +524,50 @@
             text-transform: uppercase;
         }
 
+        .filter-error-box {
+            background: rgba(232, 76, 76, 0.08);
+            border: 1px solid rgba(232, 76, 76, 0.35);
+            border-radius: 6px;
+            padding: 10px 12px;
+            margin-bottom: 14px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--red);
+            letter-spacing: 0.3px;
+            line-height: 1.5;
+        }
+
+        .no-results-box {
+            text-align: center;
+            padding: 48px 24px;
+            margin: 20px;
+            border: 1px dashed var(--border-light);
+            border-radius: 8px;
+            background: var(--accent-dim);
+        }
+        .no-results-box .no-results-icon  { font-size: 28px; margin-bottom: 12px; opacity: 0.6; }
+        .no-results-box .no-results-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            color: var(--text-muted);
+            letter-spacing: 0.3px;
+            margin-bottom: 8px;
+        }
+        .no-results-box .no-results-hint  { font-size: 11px; color: var(--text-dim); letter-spacing: 0.2px; }
+
+        .uploaded-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: #a78bfa;
+            border: 1px solid #a78bfa;
+            padding: 8px 12px;
+            border-radius: 6px;
+            text-align: center;
+            margin-bottom: 8px;
+            background: rgba(167,139,250,0.08);
+            font-weight: 500;
+        }
+
         @media (max-width: 800px) {
             .app-body { flex-direction: column; }
             .sidebar { width: 100%; min-width: 0; }
@@ -541,62 +575,118 @@
             .stats-bar { grid-template-columns: repeat(2, 1fr); }
         }
     </style>
-
 </head>
 <body>
 
-
-    <!-- TOP BAR -->
-    <div class="top-bar">
+    <!-- FIX: top-bar was styled in CSS but never rendered in the HTML -->
+    <header class="top-bar">
         <div class="logo-area">
+            <div class="logo-icon">⬡</div>
             <span class="logo-text">Real Time Packet Analyzer</span>
-            <div class="top-status">
-                <div class="dot {% if monitoring_status == 'running' %}running{% endif %}"></div>
-                {% if monitoring_status == 'running' %}ACTIVE{% else %}IDLE{% endif %}
-            </div>
         </div>
-        <div class="top-stats">
-            <div class="top-stat">
-                <div class="top-stat-label">Captured</div>
-                <div class="top-stat-value">{{ stats.total }}</div>
-            </div>
+
+        <div class="top-status">
+            <div class="dot {% if monitoring_status == 'running' %}running{% endif %}"></div>
+            {% if monitoring_status == 'running' %}CAPTURING{% else %}IDLE{% endif %}
         </div>
-    </div>
+    </header>
 
     <div class="app-body">
 
         <!-- SIDEBAR -->
         <aside class="sidebar">
 
+            <!-- ── Controls section ── -->
             <div class="sidebar-section">
                 <div class="section-label">Controls</div>
+
                 <form method="POST">
                     <input type="hidden" name="action" value="start">
                     <button type="submit" class="sb-btn sb-btn-start">▶ &nbsp;START</button>
                 </form>
+
                 <form method="POST">
                     <input type="hidden" name="action" value="stop">
                     <button type="submit" class="sb-btn sb-btn-stop">■ &nbsp;STOP</button>
                 </form>
+
+                <!-- SESSION LOG button — only when stopped and not already in session view -->
                 {% if monitoring_status == 'stopped' and view_mode != 'session' %}
                 <form method="POST">
                     <input type="hidden" name="action" value="view_session">
                     <button type="submit" class="sb-btn sb-btn-session">↓ &nbsp;SESSION LOG</button>
                 </form>
                 {% endif %}
+
+                {# FIX: each view_mode block is now its own clean if/endif #}
+
                 {% if view_mode == 'session' %}
                 <div class="session-tag">📋 SESSION VIEW</div>
                 <a href="/" style="text-decoration:none;">
                     <button type="button" class="sb-btn sb-btn-reset">✕ &nbsp;EXIT SESSION</button>
                 </a>
                 {% endif %}
-            </div>
 
+                {% if view_mode == 'uploaded' %}
+                <div class="uploaded-tag">📂 CSV — {{ uploaded_count }} PACKETS</div>
+                <a href="/" style="text-decoration:none;">
+                    <button type="button" class="sb-btn sb-btn-reset">✕ &nbsp;EXIT CSV</button>
+                </a>
+                {% endif %}
+
+                <!-- Upload CSV — always visible -->
+                <form method="POST" action="/upload_csv" enctype="multipart/form-data" style="margin-top:8px;">
+                    <label style="
+                        font-family:'JetBrains Mono',monospace;
+                        font-size:10px;
+                        letter-spacing:2px;
+                        padding:11px 14px;
+                        border:1px solid #a78bfa;
+                        border-radius:6px;
+                        cursor:pointer;
+                        color:#a78bfa;
+                        background:transparent;
+                        display:flex;
+                        align-items:center;
+                        gap:8px;
+                        width:100%;
+                    ">
+                        📂 LOAD CSV FILE
+                        <input type="file" name="csv_file" accept=".csv"
+                               style="display:none;"
+                               onchange="this.closest('form').submit()">
+                    </label>
+                </form>
+
+                <!-- Upload error messages -->
+                {% if upload_error == 'not_csv' %}
+                <div class="filter-error-box" style="margin-top:8px;">
+                    ⚠ Invalid file — CSV files only
+                </div>
+                {% elif upload_error == 'no_file' %}
+                <div class="filter-error-box" style="margin-top:8px;">
+                    ⚠ No file selected
+                </div>
+                {% elif upload_error == 'read_error' %}
+                <div class="filter-error-box" style="margin-top:8px;">
+                    ⚠ Could not read file — check CSV format
+                </div>
+                {% endif %}
+
+            </div><!-- end .sidebar-section Controls -->
+
+            <!-- ── Filters section ── -->
             <div class="sidebar-section">
                 <div class="section-label">Filters</div>
+
+                {% if filter_error %}
+                <div class="filter-error-box">⚠ {{ filter_error }}</div>
+                {% endif %}
+
                 <form method="POST">
-                    <input type="hidden" name="action" value="filter">
+                    <input type="hidden" name="action"    value="filter">
                     <input type="hidden" name="view_mode" value="{{ view_mode }}">
+
                     <label class="filter-label">Protocol</label>
                     <select name="protocol" class="sb-input">
                         <option value="">ALL</option>
@@ -604,26 +694,33 @@
                         <option value="UDP"  {% if selected_protocol == 'UDP'  %}selected{% endif %}>UDP</option>
                         <option value="ICMP" {% if selected_protocol == 'ICMP' %}selected{% endif %}>ICMP</option>
                     </select>
+
                     <label class="filter-label">Source IP</label>
                     <input type="text" name="source_ip" class="sb-input"
                            placeholder="e.g. 192.168.1.5" value="{{ selected_source_ip }}">
+
                     <label class="filter-label">Destination IP</label>
                     <input type="text" name="destination_ip" class="sb-input"
                            placeholder="e.g. 8.8.8.8" value="{{ selected_dest_ip }}">
-                    <br><br>
+
+                    <br>
                     <button type="submit" class="sb-btn sb-btn-filter">⌕ &nbsp;APPLY FILTER</button>
-                    <a href="/" style="text-decoration:none;">
-                        <button type="button" class="sb-btn sb-btn-reset">↺ &nbsp;RESET</button>
-                    </a>
                 </form>
-            </div>
+
+                <form method="POST">
+                    <input type="hidden" name="action"    value="clear_filter">
+                    <input type="hidden" name="view_mode" value="{{ view_mode }}">
+                    <button type="submit" class="sb-btn sb-btn-reset">↺ &nbsp;CLEAR FILTER</button>
+                </form>
+
+            </div><!-- end .sidebar-section Filters -->
 
         </aside>
 
         <!-- MAIN -->
         <main class="main">
 
-            <!-- STATS BAR with Stat Boxes -->
+            <!-- STATS BAR -->
             <div class="stats-bar">
                 <div class="stat-box total">
                     <div class="stat-label">Total Packets</div>
@@ -658,6 +755,14 @@
                     <div class="packet-count"><span>{{ packets|length }}</span> packets</div>
                 </div>
                 <div class="table-wrap">
+
+                    {% if no_results %}
+                    <div class="no-results-box">
+                        <div class="no-results-icon">⌕</div>
+                        <div class="no-results-title">No packets match your filter criteria</div>
+                        <div class="no-results-hint">Try a different protocol or verify the IP address format</div>
+                    </div>
+                    {% else %}
                     <table>
                         <thead>
                             <tr>
@@ -696,9 +801,12 @@
                             {% endfor %}
                         </tbody>
                     </table>
+                    {% endif %}
+
                 </div>
             </div>
 
+            <!-- SYSTEM LOG -->
             <div class="log-panel">
                 <div class="panel-header">
                     <div class="panel-title">System Log</div>
@@ -721,8 +829,9 @@
                 </div>
             </div>
 
-            <footer>NETWORK MONITOR  &nbsp;·&nbsp; COMPUTER NETWORKS PROJECT</footer>
+            <footer>NETWORK MONITOR &nbsp;·&nbsp; COMPUTER NETWORKS PROJECT</footer>
             <footer>Anus Toqeer BCSF24M012</footer>
+
         </main>
     </div>
 
